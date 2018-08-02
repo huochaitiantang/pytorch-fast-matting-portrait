@@ -1,0 +1,6 @@
+backup/*
+model/*
+img/*
+data/*
+*.pth
+
