@@ -3,4 +3,4 @@ model/*
 img/*
 data/*
 *.pth
-
+*.pyc

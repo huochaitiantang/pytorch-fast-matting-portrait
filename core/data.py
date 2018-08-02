@@ -1,4 +1,3 @@
-import scipy.io as sci
 import torch
 import cv2
 import os
@@ -29,19 +28,19 @@ class MatDataset(torch.utils.data.Dataset):
         self.normalize=normalize
         with open(namelist, 'r') as f:
             names = f.readlines()
-        print('namelist:{}'.format(namelist))
-        print('names len:{}'.format(len(names)))
+        print('\t--namelist: {}'.format(namelist))
+        print('\t--names: {}'.format(len(names)))
         for name in names:
             name = name.strip('\n')
             img_path = imgdir + '/' + name + '.jpg'
-            msk_path = mskdir + '/' + name + '_mask.mat'
+            msk_path = mskdir + '/' + name + '_mask.jpg'
             if os.path.exists(img_path) and os.path.exists(msk_path):
-                #size:[800,600,3] value:0-255 order BGR
+                #size:[800, 600, 3] value:0-255 order BGR
                 img = cv2.imread(img_path)
-                #size:[800,600] value:0 or 1
-                msk = sci.loadmat(msk_path)['mask']
+                #size:[800, 600] value:0 or 1
+                msk = (cv2.imread(msk_path) / 255)[:, :, 0]
                 self.sample_set.append((name,img,msk))
-        print('samples len:{}'.format(len(self.sample_set)))
+        print('\t--samples: {}'.format(len(self.sample_set)))
 
     def __getitem__(self,index):
         name, img, msk = self.sample_set[index]
@@ -57,7 +56,6 @@ class MatDataset(torch.utils.data.Dataset):
         bg_msk = 1 - fg_msk
         #cv2.imwrite('fg_{}.jpg'.format(name), fg_msk*255)
         msk = torch.Tensor(np.stack([bg_msk, fg_msk]))
-        #print('msk_shape:{} img_shape:{}'.format(msk.shape, new_img.shape))
         return new_img, msk, info
     
     def __len__(self):
