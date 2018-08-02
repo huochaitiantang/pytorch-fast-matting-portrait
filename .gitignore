@@ -1,6 +1,6 @@
 backup/*
 model/*
-img/*
+result/*
 data/*
 *.pth
 *.pyc
