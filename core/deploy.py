@@ -16,7 +16,7 @@ def get_args():
     parser.add_argument('--imgDir', type=str, required=True, help="directory of image")
     parser.add_argument('--cuda', action='store_true', help='use cuda?')
     parser.add_argument('--resume', type=str, required=True, help="checkpoint that model resume from")
-    parser.add_argument('--savePath', type=str, required=True, help="checkpoint that model save to")
+    parser.add_argument('--savePath', type=str, required=True, help="where prediction result save to")
     args = parser.parse_args()
     print(args)
     return args
@@ -31,8 +31,8 @@ def gen_dataset(namelist, imgdir, size, transform=True, normalize=None):
         sample_set = []
         with open(namelist, 'r') as f:
             names = f.readlines()
-        print('namelist:{}'.format(namelist))
-        print('names len:{}'.format(len(names)))
+        print('--namelist:{}'.format(namelist))
+        print('--names len:{}'.format(len(names)))
         for name in names:
             name = name.strip('\n')
             img_path = imgdir + '/' + name + '.jpg'
@@ -50,7 +50,7 @@ def gen_dataset(namelist, imgdir, size, transform=True, normalize=None):
                 new_img = new_img.view(1, 3, size, size)
 
                 sample_set.append((new_img, info))
-        print('samples len:{}'.format(len(sample_set)))
+        print('--samples len:{}'.format(len(sample_set)))
         return sample_set
 
 def main():
