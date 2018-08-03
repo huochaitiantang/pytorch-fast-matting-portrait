@@ -82,6 +82,15 @@ def format_second(secs):
     return ss    
 
 
+# [h,w,3], [h,w,1],[h,w,1] 
+def alpha_loss(img, msk_gt, alpha, eps=1e-6):
+    L_alpha = torch.sqrt(torch.pow(msk_gt - alpha, 2.) + eps).mean()
+    gt_msk_img = torch.cat((msk_gt, msk_gt, msk_gt), 1) * img
+    alpha_img = torch.cat((alpha, alpha, alpha), 1) * img
+    L_color = torch.sqrt(torch.pow(gt_msk_img - alpha_img, 2.) + eps).mean()
+    return L_alpha + L_color
+
+
 def train(args, model, criterion, optimizer, train_loader, epoch):
     t0 = time.time()
     for iteration, batch in enumerate(train_loader, 1):
@@ -91,13 +100,22 @@ def train(args, model, criterion, optimizer, train_loader, epoch):
             target = target.cuda()
         adjust_learning_rate(args, optimizer, epoch)
         optimizer.zero_grad()
-        #seg, alpha = model(input)
         seg = model(input)
+        #seg, alpha = model(input)
 
-        loss = criterion(seg, target)
         N,C,H,W = target.shape
+
+        # segmentation block loss
+        #loss = criterion(seg, target)
+        #print(target[0,:,:,:])
+        loss = criterion(seg, target[:,1,:,:].long())
+
+        # feathering block loss
         #alpha_target = target[:,1,:,:].view(N,1,H,W)
-        #loss = alpha_criterion(alpha, alpha_target)
+        #loss2 = alpha_loss(input, alpha_target, alpha)
+
+        #loss = loss1 + loss2
+
         loss.backward()
         optimizer.step()
 
@@ -138,9 +156,8 @@ def main():
     print('===> Building model')
     start_epoch, model = build_model(args)
 
-    #criterion = nn.MSELoss()
-    criterion = nn.BCEWithLogitsLoss()
-    #alpha_criterion = nn.MSELoss()
+    #criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.CrossEntropyLoss()
 
     optimizer = optim.SGD(filter(lambda p: p.requires_grad, model.parameters()), lr=args.lr, momentum=0.99, weight_decay=0.0005)
     #optimizer = optim.Adam(model.parameters(), lr = args.lr)

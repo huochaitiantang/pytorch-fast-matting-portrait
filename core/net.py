@@ -64,23 +64,25 @@ class MattNet(nn.Module):
 
         conv6 = self.ReLU(self.conv6(cat5))  ## conv6 2x64x64
         seg = self.interp(conv6)             ## 2x128x128
+
+        print("Forward:", seg[0,0,:,:].mean(), seg[0,1,:,:].mean())
         
         return seg
         
         # shape: n 1 h w
-        # no need: seg_pre = F.sigmoid(seg)
+        #seg = F.softmax(seg, dim=1)
         bg, fg = torch.split(seg, 1, dim=1)
         # shape: n 3 h w
         imgSqr = x * x
         imgMasked = x * (torch.cat((fg, fg, fg), 1))
         # shape: n 11 h w
-        convIn = torch.cat((x, bg, fg, imgSqr, imgMasked), 1)
+        convIn = torch.cat((x, seg, imgSqr, imgMasked), 1)
         newconvF1 =  self.ReLU(self.bn1(self.newconvF1(convIn)))
         newconvF2 = self.newconvF2(newconvF1)
         
         # fethering inputs:
         a, b, c = torch.split(newconvF2, 1, dim=1)
         alpha = a * fg + b * bg + c        
-        #alpha = self.sigmoid(alpha)
+        alpha = self.sigmoid(alpha)
 
         return seg, alpha

@@ -75,25 +75,39 @@ def main():
 
     for img, info in dataset:
         print('Inference for {}'.format(info[0]))
-        #seg,alpha = model(img)
         if args.cuda:
             img = img.cuda()
         seg = model(img)
-        # no need: res = F.sigmoid(res)
+        seg = F.softmax(seg, dim=1)
+        #seg,alpha = model(img)
+
+        print("Delploy:", seg[0,:,:,:])
+
         if args.cuda:
             seg_np = seg[0,1,:,:].data.cpu().numpy()
+            #alpha_np = alpha[0,0,:,:].data.cpu().numpy()
         else:
             seg_np = seg[0,1,:,:].data.numpy()
+            #alpha_np = alpha[0:0:,:,:].data.numpy()
+
         origin_h = int(seg_np.shape[0] / info[1])
         origin_w = int(seg_np.shape[1] / info[2])
+
         seg_np = cv2.resize(seg_np,(origin_w, origin_h),interpolation=cv2.INTER_LINEAR)
-    
+        #alpha_np = cv2.resize(alpha_np,(origin_w, origin_h), interpolation=cv2.INTER_LINEAR)
+
+        #print(seg_np.mean(), alpha_np.mean())
+
         #seg_fg = seg_np * 255
         seg_fg = (seg_np >= 0.5).astype(np.float32) * 255
         #seg_fg = (seg_np >= 0.95).astype(np.float32) * 255
         #seg_fg = ((seg_np < 0.95) * (seg_np >= 0.05)).astype(np.float32) * 128 + seg_fg
     
+        #alpha_fg = alpha_np * 255
+        #alpha_fg = (alpha_np >= 0.5).astype(np.float32) * 255
+
         cv2.imwrite('{}{}.jpg'.format(args.savePath, info[0]), seg_fg)
+        #cv2.imwrite('/home/liuliang/Desktop/pytorch-fast-matting-portrait/result/test/tmp/{}_stage3.jpg'.format(info[0]), seg_fg)
 
 if __name__ == "__main__":
     main()
