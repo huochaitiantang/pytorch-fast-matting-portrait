@@ -88,6 +88,7 @@ def alpha_loss(img, msk_gt, alpha, eps=1e-6):
     gt_msk_img = torch.cat((msk_gt, msk_gt, msk_gt), 1) * img
     alpha_img = torch.cat((alpha, alpha, alpha), 1) * img
     L_color = torch.sqrt(torch.pow(gt_msk_img - alpha_img, 2.) + eps).mean()
+    print("alpha loss: {} color loss: {}".format(L_alpha, L_color))
     return L_alpha + L_color
 
 
@@ -100,19 +101,19 @@ def train(args, model, criterion, optimizer, train_loader, epoch):
             target = target.cuda()
         adjust_learning_rate(args, optimizer, epoch)
         optimizer.zero_grad()
-        seg = model(input)
-        #seg, alpha = model(input)
+        #seg = model(input)
+        seg, alpha = model(input)
 
         N,C,H,W = target.shape
 
         # segmentation block loss
         #loss = criterion(seg, target)
         #print(target[0,:,:,:])
-        loss = criterion(seg, target[:,1,:,:].long())
+        #loss = criterion(seg, target[:,1,:,:].long())
 
         # feathering block loss
-        #alpha_target = target[:,1,:,:].view(N,1,H,W)
-        #loss2 = alpha_loss(input, alpha_target, alpha)
+        alpha_target = target[:,1,:,:].view(N,1,H,W)
+        loss = alpha_loss(input, alpha_target, alpha)
 
         #loss = loss1 + loss2
 

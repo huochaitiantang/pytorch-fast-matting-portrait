@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import math
+import cv2
 import torch.nn.functional as F
 
 def weight_init(m):
@@ -26,8 +27,8 @@ class MattNet(nn.Module):
         self.interp = nn.Upsample(scale_factor=2, mode='bilinear')
 
         # for stage2 training
-        #for p in self.parameters():
-        #    p.requires_grad=False
+        for p in self.parameters():
+            p.requires_grad=False
         
         # feather
         self.newconvF1 = nn.Conv2d(in_channels=11, out_channels=8, kernel_size=(3, 3), stride=1, padding=1, dilation=1, groups=1, bias=True)
@@ -65,12 +66,12 @@ class MattNet(nn.Module):
         conv6 = self.ReLU(self.conv6(cat5))  ## conv6 2x64x64
         seg = self.interp(conv6)             ## 2x128x128
 
-        print("Forward:", seg[0,0,:,:].mean(), seg[0,1,:,:].mean())
+        #print("Forward:", seg[0,0,:,:].mean(), seg[0,1,:,:].mean())
         
-        return seg
+        #return seg
         
         # shape: n 1 h w
-        #seg = F.softmax(seg, dim=1)
+        seg = F.softmax(seg, dim=1)
         bg, fg = torch.split(seg, 1, dim=1)
         # shape: n 3 h w
         imgSqr = x * x
@@ -82,7 +83,9 @@ class MattNet(nn.Module):
         
         # fethering inputs:
         a, b, c = torch.split(newconvF2, 1, dim=1)
+
+        #print("seg: {}".format(seg))
         alpha = a * fg + b * bg + c        
         alpha = self.sigmoid(alpha)
 
-        return seg, alpha
+        return seg, alpha, a, b, c

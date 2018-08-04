@@ -53,6 +53,12 @@ def gen_dataset(namelist, imgdir, size, transform=True, normalize=None):
         print('--samples len:{}'.format(len(sample_set)))
         return sample_set
 
+def np_norm(x):
+    low = x.min()
+    hig = x.max()
+    y = (x - low) / (hig - low)
+    return y
+
 def main():
 
     print("===> Loading args")
@@ -77,37 +83,53 @@ def main():
         print('Inference for {}'.format(info[0]))
         if args.cuda:
             img = img.cuda()
-        seg = model(img)
-        seg = F.softmax(seg, dim=1)
-        #seg,alpha = model(img)
+        #seg = model(img)
+        #seg = F.softmax(seg, dim=1)
+        seg,alpha,a,b,c = model(img)
 
-        print("Delploy:", seg[0,:,:,:])
+        #print("Delploy:", seg[0,:,:,:])
+        #print("alpha mean: {} a mean: {} b mean: {} c_mean: {}".format(alpha.mean(), a.mean(), b.mean(), c.mean()))
 
         if args.cuda:
             seg_np = seg[0,1,:,:].data.cpu().numpy()
-            #alpha_np = alpha[0,0,:,:].data.cpu().numpy()
+            alpha_np = alpha[0,0,:,:].data.cpu().numpy()
+            a_np = a[0,0,:,:].data.cpu().numpy()
+            b_np = b[0,0,:,:].data.cpu().numpy()
+            c_np = c[0,0,:,:].data.cpu().numpy()
         else:
             seg_np = seg[0,1,:,:].data.numpy()
-            #alpha_np = alpha[0:0:,:,:].data.numpy()
+            alpha_np = alpha[0:0:,:,:].data.numpy()
 
         origin_h = int(seg_np.shape[0] / info[1])
         origin_w = int(seg_np.shape[1] / info[2])
 
         seg_np = cv2.resize(seg_np,(origin_w, origin_h),interpolation=cv2.INTER_LINEAR)
-        #alpha_np = cv2.resize(alpha_np,(origin_w, origin_h), interpolation=cv2.INTER_LINEAR)
+        alpha_np = cv2.resize(alpha_np,(origin_w, origin_h), interpolation=cv2.INTER_LINEAR)
+        a_np = cv2.resize(a_np,(origin_w, origin_h),interpolation=cv2.INTER_LINEAR)
+        b_np = cv2.resize(b_np,(origin_w, origin_h),interpolation=cv2.INTER_LINEAR)
+        c_np = cv2.resize(c_np,(origin_w, origin_h),interpolation=cv2.INTER_LINEAR)
 
+        #print(alpha_np)
         #print(seg_np.mean(), alpha_np.mean())
 
         #seg_fg = seg_np * 255
         seg_fg = (seg_np >= 0.5).astype(np.float32) * 255
         #seg_fg = (seg_np >= 0.95).astype(np.float32) * 255
         #seg_fg = ((seg_np < 0.95) * (seg_np >= 0.05)).astype(np.float32) * 128 + seg_fg
-    
-        #alpha_fg = alpha_np * 255
+
+        alpha_fg = alpha_np * 255
         #alpha_fg = (alpha_np >= 0.5).astype(np.float32) * 255
 
+       
+        a_fg = np_norm(a_np) * 255
+        b_fg = np_norm(b_np) * 255
+        c_fg = np_norm(c_np) * 255
+    
         cv2.imwrite('{}{}.jpg'.format(args.savePath, info[0]), seg_fg)
-        #cv2.imwrite('/home/liuliang/Desktop/pytorch-fast-matting-portrait/result/test/tmp/{}_stage3.jpg'.format(info[0]), seg_fg)
+        cv2.imwrite('{}{}_alpha.jpg'.format(args.savePath, info[0]), alpha_fg)
+        cv2.imwrite('{}{}_a.jpg'.format(args.savePath, info[0]), a_fg)
+        cv2.imwrite('{}{}_b.jpg'.format(args.savePath, info[0]), b_fg)
+        cv2.imwrite('{}{}_c.jpg'.format(args.savePath, info[0]), c_fg)
 
 if __name__ == "__main__":
     main()
