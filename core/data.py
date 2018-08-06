@@ -33,7 +33,7 @@ class MatDataset(torch.utils.data.Dataset):
         for name in names:
             name = name.strip('\n')
             img_path = imgdir + '/' + name + '.jpg'
-            msk_path = mskdir + '/' + name + '_mask.jpg'
+            msk_path = mskdir + '/' + name + '.png'
             if os.path.exists(img_path) and os.path.exists(msk_path):
                 #size:[800, 600, 3] value:0-255 order BGR
                 img = cv2.imread(img_path)
