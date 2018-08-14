@@ -8,6 +8,7 @@ def get_args():
     parser.add_argument('--mskDir', type=str, required=True, help="masks directory")
     parser.add_argument('--saveDir', type=str, required=True, help="where trimap result save to")
     parser.add_argument('--list', type=str, required=True, help="list of images id")
+    parser.add_argument('--size', type=int, required=True, help="kernel size")
     args = parser.parse_args()
     print(args)
     return args
@@ -48,9 +49,8 @@ def erode_dilate(msk, struc="ELLIPSE", size=(10, 10)):
     assert(cnt1 == cnt2 + cnt3)
 
     res = dilated.copy()
-    res[((dilated == 255) & (msk == 0))] = 128
-    #res[((msk == 0))] = 128
-    #res[((dilated == 255) & (eroded == 0))] = 128
+    #res[((dilated == 255) & (msk == 0))] = 128
+    res[((dilated == 255) & (eroded == 0))] = 128
 
     return res
 
@@ -63,7 +63,7 @@ def main():
         msk_name = args.mskDir + "/" + name.strip() + ".png"
         trimap_name = args.saveDir + "/" + name.strip() + ".png"
         msk = cv2.imread(msk_name, 0)
-        trimap = erode_dilate(msk, struc="RECT", size=(10,10))
+        trimap = erode_dilate(msk, size=(args.size,args.size))
         #trimap = run_erode_dialate(msk_name, struc="RECT", size=(10, 10))
 
         print("Write to {}".format(trimap_name))

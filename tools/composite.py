@@ -11,6 +11,8 @@ alphaDir = '{}/unique_train/alpha'.format(base)
 
 savImgDir = '{}/train/image'.format(base)
 savAlaDir = '{}/train/alpha'.format(base)
+savFgDir = '{}/train/fg'.format(base)
+savBgDir = '{}/train/bg'.format(base)
 
 fgs = os.listdir(fgDir)
 bgs = os.listdir(bgDir)
@@ -55,4 +57,6 @@ for fg in fgs:
         comp = alpha * fg_img + (1. - alpha) * crop_bg_img
         comp_id = fg[:-4] + '_' + bg[:-4] + '.png'
         cv2.imwrite('{}/{}'.format(savImgDir, comp_id), comp)
+        cv2.imwrite('{}/{}'.format(savBgDir, comp_id), crop_bg_img)
         shutil.copyfile('{}/{}'.format(alphaDir, fg), '{}/{}'.format(savAlaDir, comp_id))
+        shutil.copyfile('{}/{}'.format(fgDir, fg), '{}/{}'.format(savFgDir, comp_id))

@@ -19,6 +19,7 @@ def get_args():
     parser.add_argument('--trainList', type=str, required=True, help="train image list")
     parser.add_argument('--imgDir', type=str, required=True, help="directory of image")
     parser.add_argument('--mskDir', type=str, required=True, help="directory of mask")
+    parser.add_argument('--alphaDir', type=str, required=True, help="directory of alpha")
     parser.add_argument('--batchSize', type=int, default=64, help='training batch size')
     parser.add_argument('--nEpochs', type=int, default=20, help='number of epochs to train for')
     parser.add_argument('--step', type=int, default=10, help='epoch of learning decay')
@@ -41,7 +42,7 @@ def get_dataset(args):
     Normalize = transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     train_transform = MatTransform(args.size, flip=True)
     
-    train_set = MatDataset(args.trainList, args.imgDir, args.mskDir, normalize=Normalize, transform=train_transform)
+    train_set = MatDataset(args.trainList, args.imgDir, args.mskDir, args.alphaDir, normalize=Normalize, transform=train_transform)
     train_loader = DataLoader(dataset=train_set, num_workers=args.threads, batch_size=args.batchSize, shuffle=True)
 
     return train_loader
@@ -95,10 +96,11 @@ def alpha_loss(img, msk_gt, alpha, eps=1e-6):
 def train(args, model, criterion, optimizer, train_loader, epoch):
     t0 = time.time()
     for iteration, batch in enumerate(train_loader, 1):
-        input, target = Variable(batch[0]), Variable(batch[1])
+        input, target, alpha_target = Variable(batch[0]), Variable(batch[1]), Variable(batch[2])
         if args.cuda:
             input = input.cuda()
             target = target.cuda()
+            alpha_target = alpha_target.cuda()
         adjust_learning_rate(args, optimizer, epoch)
         optimizer.zero_grad()
         #seg = model(input)
@@ -112,7 +114,8 @@ def train(args, model, criterion, optimizer, train_loader, epoch):
         #loss = criterion(seg, target[:,1,:,:].long())
 
         # feathering block loss
-        alpha_target = target[:,1,:,:].view(N,1,H,W)
+        #alpha_target = target[:,1,:,:].view(N,1,H,W)
+        #print("alpha_target shape:{} target_shape:{}".format(alpha_target.shape, target.shape))
         loss = alpha_loss(input, alpha_target, alpha)
 
         #loss = loss1 + loss2
